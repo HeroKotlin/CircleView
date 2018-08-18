@@ -1,0 +1,20 @@
+<resources>
+    <declare-styleable name="CircleView">
+
+        <!-- 最外层 -->
+        <attr name="circle_view_track_width" format="dimension|reference"/>
+        <attr name="circle_view_track_color" format="color|reference"/>
+        <attr name="circle_view_track_offset" format="dimension|reference"/>
+        <attr name="circle_view_track_value" format="float"/>
+
+        <!-- 中间层 -->
+        <attr name="circle_view_ring_width" format="dimension|reference"/>
+        <attr name="circle_view_ring_color" format="color|reference"/>
+
+        <!-- 内圆 -->
+        <attr name="circle_view_center_color" format="color|reference"/>
+        <attr name="circle_view_center_radius" format="dimension|reference"/>
+        <attr name="circle_view_center_image" format="reference"/>
+
+    </declare-styleable>
+</resources>
