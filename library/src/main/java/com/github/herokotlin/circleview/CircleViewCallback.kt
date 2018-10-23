@@ -1,7 +1,7 @@
 package com.github.herokotlin.circleview
 
 // 外部回调
-interface Callback {
+interface CircleViewCallback {
 
     fun onTouchDown() {
 

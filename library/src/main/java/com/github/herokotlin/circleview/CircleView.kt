@@ -15,21 +15,19 @@ class CircleView : View {
 
         var DEFAULT_CENTER_RADIUS = 36
 
-        var DEFAULT_CENTER_COLOR = Color.parseColor("#FFFFFF")
+        var DEFAULT_CENTER_COLOR = Color.argb(255, 255, 255, 255)
 
         var DEFAULT_RING_WIDTH = 7
 
-        var DEFAULT_RING_COLOR = Color.parseColor("#DDDDDD")
+        var DEFAULT_RING_COLOR = Color.argb(255, 221, 221, 221)
 
         var DEFAULT_TRACK_WIDTH = 7
 
-        var DEFAULT_TRACK_COLOR = Color.parseColor("#50d211")
+        var DEFAULT_TRACK_COLOR = Color.argb(255, 80, 80, 80)
 
         var DEFAULT_TRACK_OFFSET = 0
 
     }
-
-    var callback: Callback? = null
 
     /**
      * 内圆
@@ -82,11 +80,18 @@ class CircleView : View {
     var trackValue = DEFAULT_TRACK_VALUE
 
     /**
+     * 回调函数
+     */
+    var callback: CircleViewCallback? = null
+
+    /**
      * 图片
      */
     private var rawBitmap: Bitmap? = null
 
     private var circleBitmap: Bitmap? = null
+
+    private var bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     /**
      * 是否正在触摸
@@ -98,11 +103,6 @@ class CircleView : View {
      */
     private var isTouchInside = false
 
-        set(value) {
-            field = value
-            isPressed = value
-        }
-
     /**
      * 半径 = 内圆 + 轨道
      */
@@ -112,7 +112,7 @@ class CircleView : View {
             return centerRadius + ringWidth
         }
 
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val drawPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val trackRect = RectF()
 
@@ -245,32 +245,38 @@ class CircleView : View {
 
     private fun updateCircleBitmap() {
 
-        val drawBitmap = rawBitmap
-        if (drawBitmap == null) {
+        val bitmap = rawBitmap
+        if (bitmap == null) {
             circleBitmap = null
             return
         }
 
         val size = 2 * centerRadius
+
+        // 图片小于圆形容器时，不用裁剪成圆形
+        if (bitmap.width < size && bitmap.height < size) {
+            circleBitmap = bitmap
+            return
+        }
+
+        // 新建一个空画布
         val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-
         val canvas = Canvas(output)
-        val paint = Paint()
+        val zero = 0.toFloat()
 
-        val left = drawBitmap.width / 2 - centerRadius
-        val top = drawBitmap.height / 2 - centerRadius
-        val srcRect = Rect(left, top, left + size, top + size)
-        val dstRect = Rect(0, 0, size, size)
+        val saved = canvas.saveLayer(zero, zero, size.toFloat(), size.toFloat(), null, Canvas.ALL_SAVE_FLAG)
 
-        paint.isAntiAlias = true
-        paint.color = centerColor
-        paint.style = Paint.Style.FILL
+        canvas.drawCircle(centerRadius.toFloat(), centerRadius.toFloat(), centerRadius.toFloat(), bitmapPaint)
 
-        canvas.drawCircle(centerRadius.toFloat(), centerRadius.toFloat(), centerRadius.toFloat(), paint)
+        bitmapPaint.color = centerColor
+        bitmapPaint.style = Paint.Style.FILL
+        bitmapPaint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
 
-        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+        canvas.drawBitmap(bitmap, zero, zero, bitmapPaint)
 
-        canvas.drawBitmap(drawBitmap, srcRect, dstRect, paint)
+        bitmapPaint.xfermode = null
+
+        canvas.restoreToCount(saved)
 
         circleBitmap = output
 
@@ -311,15 +317,15 @@ class CircleView : View {
 
         // 画外圆
         if (ringWidth > 0) {
-            paint.style = Paint.Style.FILL
-            paint.color = ringColor
-            canvas.drawCircle(centerX, centerY, radius.toFloat(), paint)
+            drawPaint.style = Paint.Style.FILL
+            drawPaint.color = ringColor
+            canvas.drawCircle(centerX, centerY, radius.toFloat(), drawPaint)
 
             // 在上面画高亮圆弧
             if (trackWidth > 0 && ringWidth >= trackWidth) {
-                paint.style = Paint.Style.STROKE
-                paint.color = trackColor
-                paint.strokeWidth = trackWidth.toFloat()
+                drawPaint.style = Paint.Style.STROKE
+                drawPaint.color = trackColor
+                drawPaint.strokeWidth = trackWidth.toFloat()
 
                 val halfWidth = trackWidth / 2
 
@@ -328,19 +334,29 @@ class CircleView : View {
                 trackRect.right = centerX + radius - halfWidth - trackOffset
                 trackRect.bottom = centerY + radius - halfWidth - trackOffset
 
-                canvas.drawArc(trackRect, -90f, trackValue * 360, false, paint)
+                canvas.drawArc(trackRect, -90f, trackValue * 360, false, drawPaint)
             }
         }
 
 
         // 画内圆
-        paint.style = Paint.Style.FILL
-        paint.color = centerColor
-        canvas.drawCircle(centerX, centerY, centerRadius.toFloat(), paint)
+        drawPaint.style = Paint.Style.FILL
+        drawPaint.color = centerColor
+        canvas.drawCircle(centerX, centerY, centerRadius.toFloat(), drawPaint)
+
 
         // 绘制图片
-        if (circleBitmap != null) {
-            canvas.drawBitmap(circleBitmap!!, ringWidth.toFloat(), ringWidth.toFloat(), paint)
+        val bitmap = circleBitmap
+        if (bitmap != null) {
+            var left = ringWidth.toFloat()
+            var top = left
+            if (bitmap.width / 2 < centerRadius) {
+                left += centerRadius - bitmap.width / 2
+            }
+            if (bitmap.height / 2 < centerRadius) {
+                top += centerRadius - bitmap.height / 2
+            }
+            canvas.drawBitmap(bitmap, left, top, drawPaint)
         }
 
 
