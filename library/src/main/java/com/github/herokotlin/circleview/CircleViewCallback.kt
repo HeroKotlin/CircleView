@@ -7,7 +7,7 @@ interface CircleViewCallback {
 
     }
 
-    fun onTouchUp(inside: Boolean) {
+    fun onTouchUp(inside: Boolean, isLongPress: Boolean) {
 
     }
 
@@ -20,6 +20,14 @@ interface CircleViewCallback {
     }
 
     fun onTouchLeave() {
+
+    }
+
+    fun onLongPressStart() {
+
+    }
+
+    fun onLongPressEnd() {
 
     }
 

@@ -2,6 +2,7 @@ package com.github.herokotlin.circleview
 
 import android.content.Context
 import android.graphics.*
+import android.os.Handler
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
@@ -104,6 +105,21 @@ class CircleView : View {
     private var isTouchInside = false
 
     /**
+     * 是否正在长按
+     */
+    private var isLongPressing = false
+
+    /**
+     * 按下之后多少秒触发长按回调
+     */
+    private var longPressInterval = 1L
+
+    /**
+     * 是否正在等待长按触发
+     */
+    private var longPressWaiting = false
+
+    /**
      * 半径 = 内圆 + 轨道
      */
     private var radius = 0
@@ -197,6 +213,9 @@ class CircleView : View {
                         }
                         else {
                             callback?.onTouchLeave()
+                            if (longPressWaiting) {
+                                longPressWaiting = false
+                            }
                         }
                     }
                 }
@@ -228,7 +247,16 @@ class CircleView : View {
         if (!isTouching) {
             isTouching = true
             isTouchInside = true
+            longPressWaiting = true
             callback?.onTouchDown()
+
+            val handler = Handler()
+            handler.postDelayed(
+                {
+                    this.longPress()
+                },
+                longPressInterval * 1000
+            )
         }
     }
 
@@ -239,7 +267,22 @@ class CircleView : View {
         if (isTouching) {
             isTouching = false
             isTouchInside = false
-            callback?.onTouchUp(inside)
+
+            if (isLongPressing) {
+                callback?.onLongPressEnd()
+            }
+
+            callback?.onTouchUp(inside, isLongPressing)
+
+            isLongPressing = false
+        }
+    }
+
+    private fun longPress() {
+        if (isTouching && longPressWaiting) {
+            longPressWaiting = false
+            isLongPressing = true
+            callback?.onLongPressStart()
         }
     }
 
