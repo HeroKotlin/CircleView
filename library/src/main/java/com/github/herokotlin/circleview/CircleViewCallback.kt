@@ -3,31 +3,31 @@ package com.github.herokotlin.circleview
 // 外部回调
 interface CircleViewCallback {
 
-    fun onTouchDown() {
+    fun onTouchDown(circleView: CircleView) {
 
     }
 
-    fun onTouchUp(inside: Boolean, isLongPress: Boolean) {
+    fun onTouchUp(circleView: CircleView, inside: Boolean, isLongPress: Boolean) {
 
     }
 
-    fun onTouchMove(x: Float, y: Float) {
+    fun onTouchMove(circleView: CircleView, x: Float, y: Float) {
 
     }
 
-    fun onTouchEnter() {
+    fun onTouchEnter(circleView: CircleView) {
 
     }
 
-    fun onTouchLeave() {
+    fun onTouchLeave(circleView: CircleView) {
 
     }
 
-    fun onLongPressStart() {
+    fun onLongPressStart(circleView: CircleView) {
 
     }
 
-    fun onLongPressEnd() {
+    fun onLongPressEnd(circleView: CircleView) {
 
     }
 

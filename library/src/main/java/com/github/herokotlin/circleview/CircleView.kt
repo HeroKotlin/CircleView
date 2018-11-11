@@ -204,15 +204,15 @@ class CircleView : View {
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    callback?.onTouchMove(event.x, event.y)
+                    callback?.onTouchMove(this, event.x, event.y)
                     val inside = isPointInside(event.x, event.y)
                     if (inside != isTouchInside) {
                         isTouchInside = inside
                         if (isTouchInside) {
-                            callback?.onTouchEnter()
+                            callback?.onTouchEnter(this)
                         }
                         else {
-                            callback?.onTouchLeave()
+                            callback?.onTouchLeave(this)
                             if (longPressWaiting) {
                                 longPressWaiting = false
                             }
@@ -248,7 +248,7 @@ class CircleView : View {
             isTouching = true
             isTouchInside = true
             longPressWaiting = true
-            callback?.onTouchDown()
+            callback?.onTouchDown(this)
 
             val handler = Handler()
             handler.postDelayed(
@@ -269,10 +269,10 @@ class CircleView : View {
             isTouchInside = false
 
             if (isLongPressing) {
-                callback?.onLongPressEnd()
+                callback?.onLongPressEnd(this)
             }
 
-            callback?.onTouchUp(inside, isLongPressing)
+            callback?.onTouchUp(this, inside, isLongPressing)
 
             isLongPressing = false
         }
@@ -282,7 +282,7 @@ class CircleView : View {
         if (isTouching && longPressWaiting) {
             longPressWaiting = false
             isLongPressing = true
-            callback?.onLongPressStart()
+            callback?.onLongPressStart(this)
         }
     }
 
