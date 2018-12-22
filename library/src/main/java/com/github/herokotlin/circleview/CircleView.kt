@@ -324,9 +324,6 @@ class CircleView : View {
 
         paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
 
-
-        // 这里如果用 paint 会导致 png 图片的透明区域变成灰色
-        // 换成 drawPaint 就没有问题，怀疑是 xfermode 影响的...
         canvas.drawBitmap(bitmap, (size - bitmap.width) / 2f, (size - bitmap.height) / 2f, paint)
 
         paint.xfermode = null
@@ -394,6 +391,9 @@ class CircleView : View {
         }
 
         // 画内圆
+        // 本来想着下面绘制的图片把内圆直接画了
+        // 但发现如果图片是 png，它的透明区域会露出这的颜色
+        // 因此这里的画圆更像是画底色
         drawPaint.style = Paint.Style.FILL
         drawPaint.color = centerColor
         canvas.drawCircle(centerX, centerY, centerRadius.toFloat(), drawPaint)
@@ -401,15 +401,7 @@ class CircleView : View {
         // 绘制图片
         val bitmap = circleBitmap
         if (bitmap != null) {
-            var left = ringWidth.toFloat()
-            var top = left
-            if (bitmap.width / 2 < centerRadius) {
-                left += centerRadius - bitmap.width / 2
-            }
-            if (bitmap.height / 2 < centerRadius) {
-                top += centerRadius - bitmap.height / 2
-            }
-            canvas.drawBitmap(bitmap, left, top, drawPaint)
+            canvas.drawBitmap(bitmap, ringWidth.toFloat(), ringWidth.toFloat(), drawPaint)
         }
 
     }
