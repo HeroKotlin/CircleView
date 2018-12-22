@@ -2,6 +2,7 @@ package com.github.herokotlin.circleview
 
 import android.content.Context
 import android.graphics.*
+import android.os.Build
 import android.os.Handler
 import android.util.AttributeSet
 import android.util.TypedValue
@@ -80,10 +81,21 @@ class CircleView : View {
      */
     var trackValue = DEFAULT_TRACK_VALUE
 
+        set(value) {
+            if (field == value) {
+                return
+            }
+            field = when {
+                value > 1 -> { 1f }
+                value < 0 -> { 0f }
+                else -> { value }
+            }
+        }
+
     /**
      * 回调函数
      */
-    var callback: CircleViewCallback? = null
+    lateinit var callback: CircleViewCallback
 
     /**
      * 图片
@@ -102,7 +114,7 @@ class CircleView : View {
     /**
      * 是否触摸在圆内部
      */
-    private var isTouchInside = false
+    private var isTouchingInside = false
 
     /**
      * 是否正在长按
@@ -110,14 +122,14 @@ class CircleView : View {
     private var isLongPressing = false
 
     /**
+     * 是否正在等待长按触发
+     */
+    private var isLongPressWaiting = false
+
+    /**
      * 按下之后多少秒触发长按回调
      */
     private var longPressInterval = 1L
-
-    /**
-     * 是否正在等待长按触发
-     */
-    private var longPressWaiting = false
 
     /**
      * 半径 = 内圆 + 轨道
@@ -196,7 +208,7 @@ class CircleView : View {
                 }
 
                 MotionEvent.ACTION_UP -> {
-                    touchUp(isTouchInside)
+                    touchUp(isTouchingInside)
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
@@ -204,17 +216,17 @@ class CircleView : View {
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    callback?.onTouchMove(this, event.x, event.y)
+                    callback.onTouchMove(this, event.x, event.y)
                     val inside = isPointInside(event.x, event.y)
-                    if (inside != isTouchInside) {
-                        isTouchInside = inside
-                        if (isTouchInside) {
-                            callback?.onTouchEnter(this)
+                    if (inside != isTouchingInside) {
+                        isTouchingInside = inside
+                        if (isTouchingInside) {
+                            callback.onTouchEnter(this)
                         }
                         else {
-                            callback?.onTouchLeave(this)
-                            if (longPressWaiting) {
-                                longPressWaiting = false
+                            callback.onTouchLeave(this)
+                            if (isLongPressWaiting) {
+                                isLongPressWaiting = false
                             }
                         }
                     }
@@ -246,9 +258,9 @@ class CircleView : View {
     private fun touchDown() {
         if (!isTouching) {
             isTouching = true
-            isTouchInside = true
-            longPressWaiting = true
-            callback?.onTouchDown(this)
+            isTouchingInside = true
+            isLongPressWaiting = true
+            callback.onTouchDown(this)
 
             val handler = Handler()
             handler.postDelayed(
@@ -266,23 +278,23 @@ class CircleView : View {
     private fun touchUp(inside: Boolean) {
         if (isTouching) {
             isTouching = false
-            isTouchInside = false
+            isTouchingInside = false
 
             if (isLongPressing) {
-                callback?.onLongPressEnd(this)
+                callback.onLongPressEnd(this)
             }
 
-            callback?.onTouchUp(this, inside, isLongPressing)
+            callback.onTouchUp(this, inside, isLongPressing)
 
             isLongPressing = false
         }
     }
 
     private fun longPress() {
-        if (isTouching && longPressWaiting) {
-            longPressWaiting = false
+        if (isTouching && isLongPressWaiting) {
+            isLongPressWaiting = false
             isLongPressing = true
-            callback?.onLongPressStart(this)
+            callback.onLongPressStart(this)
         }
     }
 
@@ -307,7 +319,12 @@ class CircleView : View {
         val canvas = Canvas(output)
         val zero = 0.toFloat()
 
-        val saved = canvas.saveLayer(zero, zero, size.toFloat(), size.toFloat(), null, Canvas.ALL_SAVE_FLAG)
+        val saved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            canvas.saveLayer(zero, zero, size.toFloat(), size.toFloat(), null)
+        }
+        else {
+            canvas.saveLayer(zero, zero, size.toFloat(), size.toFloat(), null, Canvas.ALL_SAVE_FLAG)
+        }
 
         canvas.drawCircle(centerRadius.toFloat(), centerRadius.toFloat(), centerRadius.toFloat(), bitmapPaint)
 
@@ -365,7 +382,7 @@ class CircleView : View {
             canvas.drawCircle(centerX, centerY, radius.toFloat(), drawPaint)
 
             // 在上面画高亮圆弧
-            if (trackWidth > 0 && ringWidth >= trackWidth) {
+            if (trackWidth > 0 && trackWidth <= ringWidth) {
                 drawPaint.style = Paint.Style.STROKE
                 drawPaint.color = trackColor
                 drawPaint.strokeWidth = trackWidth.toFloat()
