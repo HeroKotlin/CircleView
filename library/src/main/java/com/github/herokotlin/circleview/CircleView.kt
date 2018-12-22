@@ -2,9 +2,11 @@ package com.github.herokotlin.circleview
 
 import android.content.Context
 import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Handler
 import android.util.AttributeSet
+import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
@@ -82,9 +84,6 @@ class CircleView : View {
     var trackValue = DEFAULT_TRACK_VALUE
 
         set(value) {
-            if (field == value) {
-                return
-            }
             field = when {
                 value > 1 -> { 1f }
                 value < 0 -> { 0f }
@@ -103,8 +102,6 @@ class CircleView : View {
     private var rawBitmap: Bitmap? = null
 
     private var circleBitmap: Bitmap? = null
-
-    private var bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     /**
      * 是否正在触摸
@@ -302,39 +299,37 @@ class CircleView : View {
 
         val bitmap = rawBitmap
         if (bitmap == null) {
-            circleBitmap = null
-            return
-        }
-
-        val size = 2 * centerRadius
-
-        // 图片小于圆形容器时，不用裁剪成圆形
-        if (bitmap.width < size && bitmap.height < size) {
             circleBitmap = bitmap
             return
         }
 
-        // 新建一个空画布
-        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val radius = centerRadius.toFloat()
+        val size = 2 * radius
+
+        val output = Bitmap.createBitmap(size.toInt(), size.toInt(), Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
-        val zero = 0.toFloat()
 
         val saved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            canvas.saveLayer(zero, zero, size.toFloat(), size.toFloat(), null)
+            canvas.saveLayer(0f, 0f, size, size, null)
         }
         else {
-            canvas.saveLayer(zero, zero, size.toFloat(), size.toFloat(), null, Canvas.ALL_SAVE_FLAG)
+            canvas.saveLayer(0f, 0f, size, size, null, Canvas.ALL_SAVE_FLAG)
         }
 
-        canvas.drawCircle(centerRadius.toFloat(), centerRadius.toFloat(), centerRadius.toFloat(), bitmapPaint)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.color = centerColor
+        paint.style = Paint.Style.FILL
 
-        bitmapPaint.color = centerColor
-        bitmapPaint.style = Paint.Style.FILL
-        bitmapPaint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+        canvas.drawCircle(radius, radius, radius, paint)
 
-        canvas.drawBitmap(bitmap, zero, zero, bitmapPaint)
+        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
 
-        bitmapPaint.xfermode = null
+
+        // 这里如果用 paint 会导致 png 图片的透明区域变成灰色
+        // 换成 drawPaint 就没有问题，怀疑是 xfermode 影响的...
+        canvas.drawBitmap(bitmap, (size - bitmap.width) / 2f, (size - bitmap.height) / 2f, paint)
+
+        paint.xfermode = null
 
         canvas.restoreToCount(saved)
 
@@ -398,12 +393,10 @@ class CircleView : View {
             }
         }
 
-
         // 画内圆
         drawPaint.style = Paint.Style.FILL
         drawPaint.color = centerColor
         canvas.drawCircle(centerX, centerY, centerRadius.toFloat(), drawPaint)
-
 
         // 绘制图片
         val bitmap = circleBitmap
@@ -418,7 +411,6 @@ class CircleView : View {
             }
             canvas.drawBitmap(bitmap, left, top, drawPaint)
         }
-
 
     }
 
