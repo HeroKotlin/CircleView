@@ -2,11 +2,9 @@ package com.github.herokotlin.circleview
 
 import android.content.Context
 import android.graphics.*
-import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Handler
 import android.util.AttributeSet
-import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
