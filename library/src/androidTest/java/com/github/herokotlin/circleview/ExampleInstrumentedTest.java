@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.github.herokotlin.circleview.test", appContext.getPackageName());
+        assertEquals("com.github.herokotlin.circleview.example", appContext.getPackageName());
     }
 }

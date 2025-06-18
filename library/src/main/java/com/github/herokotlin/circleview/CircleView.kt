@@ -1,7 +1,14 @@
 package com.github.herokotlin.circleview
 
 import android.content.Context
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.RectF
 import android.os.Build
 import android.os.Handler
 import android.util.AttributeSet
@@ -204,6 +211,9 @@ class CircleView : View {
 
                 MotionEvent.ACTION_UP -> {
                     touchUp(isTouchingInside)
+                    if (isTouchingInside) {
+                        performClick()
+                    }
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
